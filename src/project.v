@@ -5,7 +5,7 @@
 
 `default_nettype none
 
-module tt_um_vga_example (
+module tt_um_phsauter_vga_maze (
     input  wire [7:0] ui_in,    // Dedicated inputs
     output wire [7:0] uo_out,   // Dedicated outputs
     input  wire [7:0] uio_in,   // IOs: Input path
@@ -21,7 +21,7 @@ module tt_um_vga_example (
     assign uio_oe  = 0;
     
     // Suppress warnings
-    wire _unused = &{ena, ui_in[7], uio_in};
+    wire _unused = &{ena, ui_in[7], ui_in[3:0], uio_in};
 
     // =========== VGA SIGNALS ===========
     wire hsync, vsync;
