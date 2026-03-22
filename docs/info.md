@@ -11,19 +11,15 @@ You can also include images in this folder and reference them in the markdown. E
 
 The design generates and stores a perfect maze on-chip using a sequential Eller-style generator.
 The maze is shown live while it is being built, so walls can visibly change during the reveal.
-After generation finishes, the player controls the green dot while two simple wall-following solvers can race as well.
+After generation finishes, the player controls the green dot while a single wall-following solver can race as well.
 
 ## Controls
 
 - D-pad: move the player
-- A: start or stop both solvers
+- A: start or stop the solver
 - B: reset player and solver positions
 - SELECT: generate a new maze
 - START: speed up generation while the maze is still being built
-- X: toggle single-step mode for the solvers
-- Y: advance one solver step in single-step mode
-- L: slow the solvers down
-- R: speed the solvers up
 
 ## How to test
 

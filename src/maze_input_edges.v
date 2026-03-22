@@ -11,10 +11,6 @@ module maze_input_edges (
     input  wire inp_b,
     input  wire inp_select,
     input  wire inp_start,
-    input  wire inp_x,
-    input  wire inp_y,
-    input  wire inp_l,
-    input  wire inp_r,
     output wire up_edge,
     output wire down_edge,
     output wire left_edge,
@@ -22,11 +18,7 @@ module maze_input_edges (
     output wire a_edge,
     output wire b_edge,
     output wire select_edge,
-    output wire start_edge,
-    output wire x_edge,
-    output wire y_edge,
-    output wire l_edge,
-    output wire r_edge
+    output wire start_edge
 );
 
     reg inp_up_prev;
@@ -37,10 +29,6 @@ module maze_input_edges (
     reg inp_b_prev;
     reg inp_select_prev;
     reg inp_start_prev;
-    reg inp_x_prev;
-    reg inp_y_prev;
-    reg inp_l_prev;
-    reg inp_r_prev;
 
     assign up_edge = inp_up & ~inp_up_prev;
     assign down_edge = inp_down & ~inp_down_prev;
@@ -50,10 +38,6 @@ module maze_input_edges (
     assign b_edge = inp_b & ~inp_b_prev;
     assign select_edge = inp_select & ~inp_select_prev;
     assign start_edge = inp_start & ~inp_start_prev;
-    assign x_edge = inp_x & ~inp_x_prev;
-    assign y_edge = inp_y & ~inp_y_prev;
-    assign l_edge = inp_l & ~inp_l_prev;
-    assign r_edge = inp_r & ~inp_r_prev;
 
     always @(posedge clk) begin
         if (~rst_n) begin
@@ -65,10 +49,6 @@ module maze_input_edges (
             inp_b_prev <= 1'b0;
             inp_select_prev <= 1'b0;
             inp_start_prev <= 1'b0;
-            inp_x_prev <= 1'b0;
-            inp_y_prev <= 1'b0;
-            inp_l_prev <= 1'b0;
-            inp_r_prev <= 1'b0;
         end else begin
             inp_up_prev <= inp_up;
             inp_down_prev <= inp_down;
@@ -78,10 +58,6 @@ module maze_input_edges (
             inp_b_prev <= inp_b;
             inp_select_prev <= inp_select;
             inp_start_prev <= inp_start;
-            inp_x_prev <= inp_x;
-            inp_y_prev <= inp_y;
-            inp_l_prev <= inp_l;
-            inp_r_prev <= inp_r;
         end
     end
 

@@ -16,11 +16,10 @@ module tt_um_phsauter_vga_maze (
     input  wire       rst_n
 );
 
-    localparam integer MAZE_W = 8;
-    localparam integer MAZE_H = 8;
+    localparam integer MAZE_W = 5;
+    localparam integer MAZE_H = 6;
     localparam integer CELL_SHIFT = 5;
     localparam integer SEED_W = 16;
-    localparam integer SOLVER_SPEED_W = 4;
     localparam integer XW = $clog2(MAZE_W);
     localparam integer YW = $clog2(MAZE_H);
     localparam integer EAST_BITS = MAZE_H * (MAZE_W - 1);
@@ -28,8 +27,6 @@ module tt_um_phsauter_vga_maze (
 
     assign uio_out = 8'b0;
     assign uio_oe = 8'b0;
-
-    wire _unused = &{ena, ui_in[7], ui_in[3:0], uio_in};
 
     wire hsync;
     wire vsync;
@@ -57,22 +54,18 @@ module tt_um_phsauter_vga_maze (
     wire inp_r;
     wire inp_present;
 
+    wire _unused = &{ena, ui_in[7], ui_in[3:0], uio_in, inp_x, inp_y, inp_l, inp_r, inp_present};
+
     wire [EAST_BITS-1:0] east_walls_flat;
     wire [SOUTH_BITS-1:0] south_walls_flat;
     wire [XW-1:0] player_x;
     wire [YW-1:0] player_y;
-    wire [XW-1:0] solver_r_x;
-    wire [YW-1:0] solver_r_y;
-    wire [1:0] solver_r_dir;
-    wire [XW-1:0] solver_l_x;
-    wire [YW-1:0] solver_l_y;
-    wire [1:0] solver_l_dir;
-    wire solvers_active;
+    wire [XW-1:0] solver_x;
+    wire [YW-1:0] solver_y;
+    wire [1:0] solver_dir;
+    wire solver_active;
     wire player_won;
-    wire solver_r_won;
-    wire solver_l_won;
-    wire [SOLVER_SPEED_W-1:0] solver_speed;
-    wire single_step_mode;
+    wire solver_won;
     wire gen_busy;
     wire [YW-1:0] gen_row_vis;
     wire [XW-1:0] gen_col_vis;
@@ -114,8 +107,7 @@ module tt_um_phsauter_vga_maze (
     maze_game_core #(
         .MAZE_W(MAZE_W),
         .MAZE_H(MAZE_H),
-        .SEED_W(SEED_W),
-        .SOLVER_SPEED_W(SOLVER_SPEED_W)
+        .SEED_W(SEED_W)
     ) core (
         .clk(clk),
         .rst_n(rst_n),
@@ -128,26 +120,16 @@ module tt_um_phsauter_vga_maze (
         .inp_b(inp_b),
         .inp_select(inp_select),
         .inp_start(inp_start),
-        .inp_x(inp_x),
-        .inp_y(inp_y),
-        .inp_l(inp_l),
-        .inp_r(inp_r),
         .east_walls_flat(east_walls_flat),
         .south_walls_flat(south_walls_flat),
         .player_x(player_x),
         .player_y(player_y),
-        .solver_r_x(solver_r_x),
-        .solver_r_y(solver_r_y),
-        .solver_r_dir(solver_r_dir),
-        .solver_l_x(solver_l_x),
-        .solver_l_y(solver_l_y),
-        .solver_l_dir(solver_l_dir),
-        .solvers_active(solvers_active),
+        .solver_x(solver_x),
+        .solver_y(solver_y),
+        .solver_dir(solver_dir),
+        .solver_active(solver_active),
         .player_won(player_won),
-        .solver_r_won(solver_r_won),
-        .solver_l_won(solver_l_won),
-        .solver_speed(solver_speed),
-        .single_step_mode(single_step_mode),
+        .solver_won(solver_won),
         .gen_busy(gen_busy),
         .gen_row_vis(gen_row_vis),
         .gen_col_vis(gen_col_vis),
@@ -166,15 +148,10 @@ module tt_um_phsauter_vga_maze (
         .south_walls_flat(south_walls_flat),
         .player_x(player_x),
         .player_y(player_y),
-        .solver_r_x(solver_r_x),
-        .solver_r_y(solver_r_y),
-        .solver_l_x(solver_l_x),
-        .solver_l_y(solver_l_y),
+        .solver_x(solver_x),
+        .solver_y(solver_y),
         .player_won(player_won),
-        .solver_r_won(solver_r_won),
-        .solver_l_won(solver_l_won),
-        .solver_speed(solver_speed),
-        .single_step_mode(single_step_mode),
+        .solver_won(solver_won),
         .gen_busy(gen_busy),
         .gen_row(gen_row_vis),
         .gen_col(gen_col_vis),
