@@ -3,6 +3,8 @@
 module maze_video #(
     parameter integer MAZE_W = 6,
     parameter integer MAZE_H = 6,
+    parameter integer SEED_W = 16,
+    parameter integer GEN_ALGO = 1,
     parameter integer CELL_SHIFT = 5,
     parameter integer XW = $clog2(MAZE_W),
     parameter integer YW = $clog2(MAZE_H),
@@ -26,6 +28,7 @@ module maze_video #(
     input  wire                  solver_won,
     input  wire                  gen_busy,
     input  wire [YW-1:0]         gen_row,
+    input  wire [SEED_W-1:0]     maze_seed,
     output reg  [1:0]            r_out,
     output reg  [1:0]            g_out,
     output reg  [1:0]            b_out
@@ -73,19 +76,37 @@ module maze_video #(
     wire highlight_row = gen_busy && in_maze && (cell_y == gen_row);
     wire row_visible = ~gen_busy || (cell_y <= gen_row);
 
-    maze_wall_query #(
-        .MAZE_W(MAZE_W),
-        .MAZE_H(MAZE_H)
-    ) pixel_walls (
-        .cell_x(cell_x),
-        .cell_y(cell_y),
-        .east_walls_flat(east_walls_flat),
-        .south_walls_flat(south_walls_flat),
-        .north_wall(north_wall),
-        .south_wall(south_wall),
-        .east_wall(east_wall),
-        .west_wall(west_wall)
-    );
+    generate
+        if (GEN_ALGO == 2) begin : gen_proc_pixel_walls
+            maze_wall_query_proc_binary_tree #(
+                .MAZE_W(MAZE_W),
+                .MAZE_H(MAZE_H),
+                .SEED_W(SEED_W)
+            ) pixel_walls (
+                .proc_seed(maze_seed),
+                .cell_x(cell_x),
+                .cell_y(cell_y),
+                .north_wall(north_wall),
+                .south_wall(south_wall),
+                .east_wall(east_wall),
+                .west_wall(west_wall)
+            );
+        end else begin : gen_stored_pixel_walls
+            maze_wall_query #(
+                .MAZE_W(MAZE_W),
+                .MAZE_H(MAZE_H)
+            ) pixel_walls (
+                .cell_x(cell_x),
+                .cell_y(cell_y),
+                .east_walls_flat(east_walls_flat),
+                .south_walls_flat(south_walls_flat),
+                .north_wall(north_wall),
+                .south_wall(south_wall),
+                .east_wall(east_wall),
+                .west_wall(west_wall)
+            );
+        end
+    endgenerate
 
     always @(*) begin
         r_out = 2'b00;

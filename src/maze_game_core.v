@@ -43,7 +43,8 @@ module maze_game_core #(
     output reg                   player_won,
     output reg                   solver_won,
     output wire                  gen_busy,
-    output wire [YW-1:0]         gen_row_vis
+    output wire [YW-1:0]         gen_row_vis,
+    output wire [SEED_W-1:0]     maze_seed_vis
 );
 
     localparam [2:0] C_RESET = 3'd0;
@@ -88,6 +89,8 @@ module maze_game_core #(
     wire [XW-1:0] solver_next_x;
     wire [YW-1:0] solver_next_y;
     wire [1:0] solver_next_dir;
+
+    assign maze_seed_vis = maze_seed;
 
     wire solver_tick_normal = frame_tick && (solver_frame_count == 0);
     wire solver_tick = (core_state == C_PLAY) && solver_active && ~player_won && ~solver_won && solver_tick_normal;
@@ -178,33 +181,65 @@ module maze_game_core #(
         end
     endgenerate
 
-    maze_wall_query #(
-        .MAZE_W(MAZE_W),
-        .MAZE_H(MAZE_H)
-    ) player_walls (
-        .cell_x(player_x),
-        .cell_y(player_y),
-        .east_walls_flat(east_walls_flat),
-        .south_walls_flat(south_walls_flat),
-        .north_wall(player_north_wall),
-        .south_wall(player_south_wall),
-        .east_wall(player_east_wall),
-        .west_wall(player_west_wall)
-    );
+    generate
+        if (GEN_ALGO == GEN_ALGO_PROC_BINARY) begin : gen_proc_queries
+            maze_wall_query_proc_binary_tree #(
+                .MAZE_W(MAZE_W),
+                .MAZE_H(MAZE_H),
+                .SEED_W(SEED_W)
+            ) player_walls (
+                .proc_seed(maze_seed),
+                .cell_x(player_x),
+                .cell_y(player_y),
+                .north_wall(player_north_wall),
+                .south_wall(player_south_wall),
+                .east_wall(player_east_wall),
+                .west_wall(player_west_wall)
+            );
 
-    maze_wall_query #(
-        .MAZE_W(MAZE_W),
-        .MAZE_H(MAZE_H)
-    ) solver_walls (
-        .cell_x(solver_x),
-        .cell_y(solver_y),
-        .east_walls_flat(east_walls_flat),
-        .south_walls_flat(south_walls_flat),
-        .north_wall(solver_north_wall),
-        .south_wall(solver_south_wall),
-        .east_wall(solver_east_wall),
-        .west_wall(solver_west_wall)
-    );
+            maze_wall_query_proc_binary_tree #(
+                .MAZE_W(MAZE_W),
+                .MAZE_H(MAZE_H),
+                .SEED_W(SEED_W)
+            ) solver_walls (
+                .proc_seed(maze_seed),
+                .cell_x(solver_x),
+                .cell_y(solver_y),
+                .north_wall(solver_north_wall),
+                .south_wall(solver_south_wall),
+                .east_wall(solver_east_wall),
+                .west_wall(solver_west_wall)
+            );
+        end else begin : gen_stored_queries
+            maze_wall_query #(
+                .MAZE_W(MAZE_W),
+                .MAZE_H(MAZE_H)
+            ) player_walls (
+                .cell_x(player_x),
+                .cell_y(player_y),
+                .east_walls_flat(east_walls_flat),
+                .south_walls_flat(south_walls_flat),
+                .north_wall(player_north_wall),
+                .south_wall(player_south_wall),
+                .east_wall(player_east_wall),
+                .west_wall(player_west_wall)
+            );
+
+            maze_wall_query #(
+                .MAZE_W(MAZE_W),
+                .MAZE_H(MAZE_H)
+            ) solver_walls (
+                .cell_x(solver_x),
+                .cell_y(solver_y),
+                .east_walls_flat(east_walls_flat),
+                .south_walls_flat(south_walls_flat),
+                .north_wall(solver_north_wall),
+                .south_wall(solver_south_wall),
+                .east_wall(solver_east_wall),
+                .west_wall(solver_west_wall)
+            );
+        end
+    endgenerate
 
     maze_solver_hand #(
         .MAZE_W(MAZE_W),

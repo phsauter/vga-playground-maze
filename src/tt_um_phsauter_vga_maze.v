@@ -16,8 +16,8 @@ module tt_um_phsauter_vga_maze (
     input  wire       rst_n
 );
 
-    localparam integer TOP_MAZE_W = 8;
-    localparam integer TOP_MAZE_H = 8;
+    localparam integer TOP_MAZE_W = 20;
+    localparam integer TOP_MAZE_H = 15;
     localparam integer TOP_CELL_SHIFT = 5;
     localparam integer TOP_SEED_W = 16;
     localparam integer GEN_ALGO_ELLER = 0;
@@ -71,6 +71,7 @@ module tt_um_phsauter_vga_maze (
     wire solver_won;
     wire gen_busy;
     wire [YW-1:0] gen_row_vis;
+    wire [TOP_SEED_W-1:0] maze_seed_vis;
 
     assign uo_out = {hsync, b_out[0], g_out[0], r_out[0], vsync, b_out[1], g_out[1], r_out[1]};
 
@@ -133,12 +134,15 @@ module tt_um_phsauter_vga_maze (
         .player_won(player_won),
         .solver_won(solver_won),
         .gen_busy(gen_busy),
-        .gen_row_vis(gen_row_vis)
+        .gen_row_vis(gen_row_vis),
+        .maze_seed_vis(maze_seed_vis)
     );
 
     maze_video #(
         .MAZE_W(TOP_MAZE_W),
         .MAZE_H(TOP_MAZE_H),
+        .SEED_W(TOP_SEED_W),
+        .GEN_ALGO(GEN_ALGO_PROC_BINARY),
         .CELL_SHIFT(TOP_CELL_SHIFT)
     ) video (
         .pix_x(pix_x),
@@ -154,6 +158,7 @@ module tt_um_phsauter_vga_maze (
         .solver_won(solver_won),
         .gen_busy(gen_busy),
         .gen_row(gen_row_vis),
+        .maze_seed(maze_seed_vis),
         .r_out(r_out),
         .g_out(g_out),
         .b_out(b_out)
