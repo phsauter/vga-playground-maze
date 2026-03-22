@@ -20,6 +20,7 @@ project:
     - "maze_game_core.v"
     - "maze_gen_binary_tree.v"
     - "maze_gen_eller.v"
+    - "maze_gen_proc_binary_tree.v"
     - "maze_input_edges.v"
     - "maze_map.v"
     - "maze_solver_hand.v"

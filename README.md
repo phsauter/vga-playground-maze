@@ -21,8 +21,9 @@ In short: the current code is AI-generated RTL, but it was not produced blindly.
 
 ## What It Does
 
-- generates a perfect maze using a compact binary-tree maze generator by default
-- stores the maze as compact east-wall and south-wall bitfields
+- generates a perfect maze using a procedural binary-tree generator by default
+- uses a `10x10` maze in the default top-level configuration
+- keeps alternate stored-map generators available as compile-time options
 - renders the maze directly to VGA without a framebuffer
 - shows the maze changing while generation is in progress
 - lets the player move through the maze with a gamepad
@@ -42,9 +43,10 @@ In short: the current code is AI-generated RTL, but it was not produced blindly.
 - `src/hvsync_generator.v`: VGA timing generator from the Tiny Tapeout template
 - `src/gamepad_pmod.v`: PMOD gamepad interface modules
 - `src/maze_game_core.v`: gameplay, control FSM, seed handling, solver control, compile-time generator selection
-- `src/maze_gen_binary_tree.v`: compact default maze generator for area-constrained builds
+- `src/maze_gen_binary_tree.v`: stored binary-tree generator
+- `src/maze_gen_proc_binary_tree.v`: procedural binary-tree generator used by default
 - `src/maze_gen_eller.v`: larger optional Eller generator kept as an alternate module
-- `src/maze_map.v`: compact maze wall storage
+- `src/maze_map.v`: legacy compact maze wall storage module retained for comparison/refactoring work
 - `src/maze_wall_query.v`: shared wall lookup logic for movement and rendering
 - `src/maze_solver_hand.v`: reusable wall-follower solver block
 - `src/maze_video.v`: VGA-side rendering and live generation highlight overlay
@@ -53,7 +55,7 @@ In short: the current code is AI-generated RTL, but it was not produced blindly.
 
 Tiny Tapeout `1x1` area is tight, so the design avoids large memories and framebuffers.
 
-The current implementation stores only the maze wall map and generates it sequentially. That gives more interesting mazes than the older fixed-pattern approach while still keeping the design small enough to be plausible for a single tile.
+The current default implementation uses a procedural binary-tree maze formula plus a row-by-row reveal, which minimizes state while still producing a real playable maze. Stored-map generator variants are still kept in the codebase as alternate compile-time options for comparison and future experiments.
 
 The renderer uses power-of-two cell sizing so pixel-to-cell conversion is cheap, and the generator is throttled so the build process is visible instead of finishing instantly.
 

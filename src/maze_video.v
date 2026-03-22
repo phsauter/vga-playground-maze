@@ -71,6 +71,7 @@ module maze_video #(
                      ~player_here && ~solver_here;
 
     wire highlight_row = gen_busy && in_maze && (cell_y == gen_row);
+    wire row_visible = ~gen_busy || (cell_y <= gen_row);
 
     maze_wall_query #(
         .MAZE_W(MAZE_W),
@@ -96,6 +97,10 @@ module maze_video #(
             g_out = 2'b00;
             b_out = 2'b00;
         end else if (~in_maze) begin
+            r_out = 2'b00;
+            g_out = 2'b00;
+            b_out = 2'b00;
+        end else if (~row_visible) begin
             r_out = 2'b00;
             g_out = 2'b00;
             b_out = 2'b00;

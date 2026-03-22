@@ -16,15 +16,17 @@ module tt_um_phsauter_vga_maze (
     input  wire       rst_n
 );
 
-    localparam integer MAZE_W = 6;
-    localparam integer MAZE_H = 6;
-    localparam integer CELL_SHIFT = 5;
-    localparam integer SEED_W = 16;
+    localparam integer TOP_MAZE_W = 8;
+    localparam integer TOP_MAZE_H = 8;
+    localparam integer TOP_CELL_SHIFT = 5;
+    localparam integer TOP_SEED_W = 16;
+    localparam integer GEN_ALGO_ELLER = 0;
     localparam integer GEN_ALGO_BINARY = 1;
-    localparam integer XW = $clog2(MAZE_W);
-    localparam integer YW = $clog2(MAZE_H);
-    localparam integer EAST_BITS = MAZE_H * (MAZE_W - 1);
-    localparam integer SOUTH_BITS = (MAZE_H - 1) * MAZE_W;
+    localparam integer GEN_ALGO_PROC_BINARY = 2;
+    localparam integer XW = $clog2(TOP_MAZE_W);
+    localparam integer YW = $clog2(TOP_MAZE_H);
+    localparam integer EAST_BITS = TOP_MAZE_H * (TOP_MAZE_W - 1);
+    localparam integer SOUTH_BITS = (TOP_MAZE_H - 1) * TOP_MAZE_W;
 
     assign uio_out = 8'b0;
     assign uio_oe = 8'b0;
@@ -55,7 +57,7 @@ module tt_um_phsauter_vga_maze (
     wire inp_r;
     wire inp_present;
 
-    wire _unused = &{ena, ui_in[7], ui_in[3:0], uio_in, inp_x, inp_y, inp_l, inp_r, inp_present};
+    wire _unused = &{ena, ui_in[7], ui_in[3:0], uio_in, inp_x, inp_y, inp_l, inp_r, inp_present, GEN_ALGO_ELLER[0], GEN_ALGO_BINARY[0], GEN_ALGO_PROC_BINARY[0]};
 
     wire [EAST_BITS-1:0] east_walls_flat;
     wire [SOUTH_BITS-1:0] south_walls_flat;
@@ -104,10 +106,10 @@ module tt_um_phsauter_vga_maze (
     );
 
     maze_game_core #(
-        .MAZE_W(MAZE_W),
-        .MAZE_H(MAZE_H),
-        .SEED_W(SEED_W),
-        .GEN_ALGO(GEN_ALGO_BINARY)
+        .MAZE_W(TOP_MAZE_W),
+        .MAZE_H(TOP_MAZE_H),
+        .SEED_W(TOP_SEED_W),
+        .GEN_ALGO(GEN_ALGO_PROC_BINARY)
     ) core (
         .clk(clk),
         .rst_n(rst_n),
@@ -135,9 +137,9 @@ module tt_um_phsauter_vga_maze (
     );
 
     maze_video #(
-        .MAZE_W(MAZE_W),
-        .MAZE_H(MAZE_H),
-        .CELL_SHIFT(CELL_SHIFT)
+        .MAZE_W(TOP_MAZE_W),
+        .MAZE_H(TOP_MAZE_H),
+        .CELL_SHIFT(TOP_CELL_SHIFT)
     ) video (
         .pix_x(pix_x),
         .pix_y(pix_y),

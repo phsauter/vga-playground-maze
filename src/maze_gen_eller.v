@@ -6,7 +6,9 @@ module maze_gen_eller #(
     parameter integer SEED_W = 16,
     parameter integer XW = $clog2(MAZE_W),
     parameter integer YW = $clog2(MAZE_H),
-    parameter integer SET_ID_W = $clog2(MAZE_W + 1)
+    parameter integer SET_ID_W = $clog2(MAZE_W + 1),
+    parameter integer EAST_BITS = MAZE_H * (MAZE_W - 1),
+    parameter integer SOUTH_BITS = (MAZE_H - 1) * MAZE_W
 ) (
     input  wire             clk,
     input  wire             rst_n,
@@ -17,15 +19,8 @@ module maze_gen_eller #(
     output reg              busy,
     output reg              done,
     output reg  [YW-1:0]    vis_row,
-    output reg              clear_all,
-    output reg              east_we,
-    output reg  [XW-1:0]    east_x,
-    output reg  [YW-1:0]    east_y,
-    output reg              east_val,
-    output reg              south_we,
-    output reg  [XW-1:0]    south_x,
-    output reg  [YW-1:0]    south_y,
-    output reg              south_val
+    output reg  [EAST_BITS-1:0]  east_walls_flat,
+    output reg  [SOUTH_BITS-1:0] south_walls_flat
 );
 
     localparam [3:0] G_IDLE = 4'd0;
@@ -86,6 +81,22 @@ module maze_gen_eller #(
         end
     endfunction
 
+    function integer east_idx;
+        input [XW-1:0] x;
+        input [YW-1:0] y;
+        begin
+            east_idx = y * (MAZE_W - 1) + x;
+        end
+    endfunction
+
+    function integer south_idx;
+        input [XW-1:0] x;
+        input [YW-1:0] y;
+        begin
+            south_idx = y * MAZE_W + x;
+        end
+    endfunction
+
     wire advance = busy & (fast_mode | step_en);
 
     always @(posedge clk) begin
@@ -94,15 +105,8 @@ module maze_gen_eller #(
             busy <= 1'b0;
             done <= 1'b0;
             vis_row <= {YW{1'b0}};
-            clear_all <= 1'b0;
-            east_we <= 1'b0;
-            east_x <= {XW{1'b0}};
-            east_y <= {YW{1'b0}};
-            east_val <= 1'b1;
-            south_we <= 1'b0;
-            south_x <= {XW{1'b0}};
-            south_y <= {YW{1'b0}};
-            south_val <= 1'b1;
+            east_walls_flat <= {EAST_BITS{1'b1}};
+            south_walls_flat <= {SOUTH_BITS{1'b1}};
             row_idx <= {YW{1'b0}};
             col_idx <= {XW{1'b0}};
             remap_idx <= {XW{1'b0}};
@@ -122,9 +126,6 @@ module maze_gen_eller #(
             end
         end else begin
             done <= 1'b0;
-            clear_all <= 1'b0;
-            east_we <= 1'b0;
-            south_we <= 1'b0;
 
             if (start) begin
                 gen_state <= G_CLEAR;
@@ -151,7 +152,8 @@ module maze_gen_eller #(
                 lfsr <= lfsr_step(lfsr);
                 case (gen_state)
                     G_CLEAR: begin
-                        clear_all <= 1'b1;
+                        east_walls_flat <= {EAST_BITS{1'b1}};
+                        south_walls_flat <= {SOUTH_BITS{1'b1}};
                         vis_row <= {YW{1'b0}};
                         for (i = 0; i < MAZE_W; i = i + 1) begin
                             row_set[i] <= {SET_ID_W{1'b0}};
@@ -209,10 +211,7 @@ module maze_gen_eller #(
                     G_JOIN_SCAN: begin
                         vis_row <= row_idx;
                         if (row_set[col_idx] != row_set[col_idx + 1'b1] && decide_path(lfsr[1:0], JOIN_BIAS)) begin
-                            east_we <= 1'b1;
-                            east_x <= col_idx;
-                            east_y <= row_idx;
-                            east_val <= 1'b0;
+                            east_walls_flat[east_idx(col_idx, row_idx)] <= 1'b0;
                             merge_from <= row_set[col_idx + 1'b1];
                             merge_to <= row_set[col_idx];
                             remap_idx <= {XW{1'b0}};
@@ -273,10 +272,7 @@ module maze_gen_eller #(
                         end
 
                         if (decide_path(lfsr[3:2], DROP_BIAS)) begin
-                            south_we <= 1'b1;
-                            south_x <= col_idx;
-                            south_y <= row_idx;
-                            south_val <= 1'b0;
+                            south_walls_flat[south_idx(col_idx, row_idx)] <= 1'b0;
                             next_row_set[col_idx] <= row_set[col_idx];
                             set_has_down[row_set[col_idx]] <= 1'b1;
                         end else begin
@@ -294,10 +290,7 @@ module maze_gen_eller #(
                     G_REPAIR_SCAN: begin
                         vis_row <= row_idx;
                         if (~set_has_down[row_set[col_idx]] && (set_first_x[row_set[col_idx]] == col_idx)) begin
-                            south_we <= 1'b1;
-                            south_x <= col_idx;
-                            south_y <= row_idx;
-                            south_val <= 1'b0;
+                            south_walls_flat[south_idx(col_idx, row_idx)] <= 1'b0;
                             next_row_set[col_idx] <= row_set[col_idx];
                             set_has_down[row_set[col_idx]] <= 1'b1;
                         end
@@ -317,10 +310,7 @@ module maze_gen_eller #(
                     G_LAST_ROW_JOIN: begin
                         vis_row <= row_idx;
                         if (row_set[col_idx] != row_set[col_idx + 1'b1]) begin
-                            east_we <= 1'b1;
-                            east_x <= col_idx;
-                            east_y <= row_idx;
-                            east_val <= 1'b0;
+                            east_walls_flat[east_idx(col_idx, row_idx)] <= 1'b0;
                             merge_from <= row_set[col_idx + 1'b1];
                             merge_to <= row_set[col_idx];
                             remap_idx <= {XW{1'b0}};

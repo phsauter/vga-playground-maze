@@ -5,26 +5,21 @@ module maze_gen_binary_tree #(
     parameter integer MAZE_H = 8,
     parameter integer SEED_W = 16,
     parameter integer XW = $clog2(MAZE_W),
-    parameter integer YW = $clog2(MAZE_H)
+    parameter integer YW = $clog2(MAZE_H),
+    parameter integer EAST_BITS = MAZE_H * (MAZE_W - 1),
+    parameter integer SOUTH_BITS = (MAZE_H - 1) * MAZE_W
 ) (
-    input  wire              clk,
-    input  wire              rst_n,
-    input  wire              start,
-    input  wire              step_en,
-    input  wire              fast_mode,
-    input  wire [SEED_W-1:0] seed,
-    output reg               busy,
-    output reg               done,
-    output reg  [YW-1:0]     vis_row,
-    output reg               clear_all,
-    output reg               east_we,
-    output reg  [XW-1:0]     east_x,
-    output reg  [YW-1:0]     east_y,
-    output reg               east_val,
-    output reg               south_we,
-    output reg  [XW-1:0]     south_x,
-    output reg  [YW-1:0]     south_y,
-    output reg               south_val
+    input  wire                  clk,
+    input  wire                  rst_n,
+    input  wire                  start,
+    input  wire                  step_en,
+    input  wire                  fast_mode,
+    input  wire [SEED_W-1:0]     seed,
+    output reg                   busy,
+    output reg                   done,
+    output reg  [YW-1:0]         vis_row,
+    output reg  [EAST_BITS-1:0]  east_walls_flat,
+    output reg  [SOUTH_BITS-1:0] south_walls_flat
 );
 
     localparam [1:0] G_IDLE  = 2'd0;
@@ -48,16 +43,21 @@ module maze_gen_binary_tree #(
         end
     endfunction
 
-    task automatic advance_cell;
+    function integer east_idx;
+        input [XW-1:0] x;
+        input [YW-1:0] y;
         begin
-            if (col_idx == LAST_COL) begin
-                col_idx <= {XW{1'b0}};
-                row_idx <= row_idx + 1'b1;
-            end else begin
-                col_idx <= col_idx + 1'b1;
-            end
+            east_idx = y * (MAZE_W - 1) + x;
         end
-    endtask
+    endfunction
+
+    function integer south_idx;
+        input [XW-1:0] x;
+        input [YW-1:0] y;
+        begin
+            south_idx = y * MAZE_W + x;
+        end
+    endfunction
 
     always @(posedge clk) begin
         if (~rst_n) begin
@@ -65,23 +65,13 @@ module maze_gen_binary_tree #(
             busy <= 1'b0;
             done <= 1'b0;
             vis_row <= {YW{1'b0}};
-            clear_all <= 1'b0;
-            east_we <= 1'b0;
-            east_x <= {XW{1'b0}};
-            east_y <= {YW{1'b0}};
-            east_val <= 1'b1;
-            south_we <= 1'b0;
-            south_x <= {XW{1'b0}};
-            south_y <= {YW{1'b0}};
-            south_val <= 1'b1;
+            east_walls_flat <= {EAST_BITS{1'b1}};
+            south_walls_flat <= {SOUTH_BITS{1'b1}};
             col_idx <= {XW{1'b0}};
             row_idx <= {YW{1'b0}};
             lfsr <= {{(SEED_W-8){1'b0}}, 8'hA5};
         end else begin
             done <= 1'b0;
-            clear_all <= 1'b0;
-            east_we <= 1'b0;
-            south_we <= 1'b0;
 
             if (start) begin
                 gen_state <= G_CLEAR;
@@ -94,7 +84,8 @@ module maze_gen_binary_tree #(
                 lfsr <= lfsr_step(lfsr);
                 case (gen_state)
                     G_CLEAR: begin
-                        clear_all <= 1'b1;
+                        east_walls_flat <= {EAST_BITS{1'b1}};
+                        south_walls_flat <= {SOUTH_BITS{1'b1}};
                         vis_row <= {YW{1'b0}};
                         col_idx <= {XW{1'b0}};
                         row_idx <= {YW{1'b0}};
@@ -107,27 +98,21 @@ module maze_gen_binary_tree #(
                             gen_state <= G_DONE;
                         end else begin
                             if (row_idx == LAST_ROW) begin
-                                east_we <= 1'b1;
-                                east_x <= col_idx;
-                                east_y <= row_idx;
-                                east_val <= 1'b0;
+                                east_walls_flat[east_idx(col_idx, row_idx)] <= 1'b0;
                             end else if (col_idx == LAST_COL) begin
-                                south_we <= 1'b1;
-                                south_x <= col_idx;
-                                south_y <= row_idx;
-                                south_val <= 1'b0;
+                                south_walls_flat[south_idx(col_idx, row_idx)] <= 1'b0;
                             end else if (~lfsr[0]) begin
-                                east_we <= 1'b1;
-                                east_x <= col_idx;
-                                east_y <= row_idx;
-                                east_val <= 1'b0;
+                                east_walls_flat[east_idx(col_idx, row_idx)] <= 1'b0;
                             end else begin
-                                south_we <= 1'b1;
-                                south_x <= col_idx;
-                                south_y <= row_idx;
-                                south_val <= 1'b0;
+                                south_walls_flat[south_idx(col_idx, row_idx)] <= 1'b0;
                             end
-                            advance_cell();
+
+                            if (col_idx == LAST_COL) begin
+                                col_idx <= {XW{1'b0}};
+                                row_idx <= row_idx + 1'b1;
+                            end else begin
+                                col_idx <= col_idx + 1'b1;
+                            end
                         end
                     end
 

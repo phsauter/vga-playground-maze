@@ -6,7 +6,7 @@ SIM ?= icarus
 FST ?= -fst # Use more efficient FST format
 TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
-PROJECT_SOURCES = tt_um_phsauter_vga_maze.v maze_game_core.v maze_gen_binary_tree.v maze_gen_eller.v maze_input_edges.v maze_map.v maze_solver_hand.v maze_video.v maze_wall_query.v gamepad_pmod.v hvsync_generator.v
+PROJECT_SOURCES = tt_um_phsauter_vga_maze.v maze_game_core.v maze_gen_binary_tree.v maze_gen_eller.v maze_gen_proc_binary_tree.v maze_input_edges.v maze_map.v maze_solver_hand.v maze_video.v maze_wall_query.v gamepad_pmod.v hvsync_generator.v
 
 ifneq ($(GATES),yes)
 
