@@ -26,8 +26,6 @@ module maze_video #(
     input  wire                  solver_won,
     input  wire                  gen_busy,
     input  wire [YW-1:0]         gen_row,
-    input  wire [XW-1:0]         gen_col,
-    input  wire [2:0]            gen_phase,
     output reg  [1:0]            r_out,
     output reg  [1:0]            g_out,
     output reg  [1:0]            b_out
@@ -73,11 +71,6 @@ module maze_video #(
                      ~player_here && ~solver_here;
 
     wire highlight_row = gen_busy && in_maze && (cell_y == gen_row);
-    wire highlight_cell = highlight_row && (cell_x == gen_col);
-
-    reg [1:0] phase_r;
-    reg [1:0] phase_g;
-    reg [1:0] phase_b;
 
     maze_wall_query #(
         .MAZE_W(MAZE_W),
@@ -92,19 +85,6 @@ module maze_video #(
         .east_wall(east_wall),
         .west_wall(west_wall)
     );
-
-    always @(*) begin
-        case (gen_phase)
-            3'd0: begin phase_r = 2'b01; phase_g = 2'b01; phase_b = 2'b00; end
-            3'd1: begin phase_r = 2'b10; phase_g = 2'b01; phase_b = 2'b00; end
-            3'd2: begin phase_r = 2'b11; phase_g = 2'b10; phase_b = 2'b00; end
-            3'd3: begin phase_r = 2'b10; phase_g = 2'b00; phase_b = 2'b10; end
-            3'd4: begin phase_r = 2'b00; phase_g = 2'b10; phase_b = 2'b11; end
-            3'd5: begin phase_r = 2'b11; phase_g = 2'b00; phase_b = 2'b01; end
-            3'd6: begin phase_r = 2'b10; phase_g = 2'b11; phase_b = 2'b00; end
-            default: begin phase_r = 2'b00; phase_g = 2'b10; phase_b = 2'b00; end
-        endcase
-    end
 
     always @(*) begin
         r_out = 2'b00;
@@ -131,16 +111,8 @@ module maze_video #(
             r_out = 2'b11;
             g_out = 2'b11;
             b_out = 2'b11;
-            if (highlight_row) begin
-                r_out = phase_r | 2'b01;
-                g_out = phase_g | 2'b01;
-                b_out = phase_b | 2'b01;
-            end
-            if (highlight_cell) begin
-                r_out = 2'b11;
-                g_out = phase_g | 2'b10;
-                b_out = phase_b | 2'b10;
-            end
+            if (highlight_row)
+                b_out = 2'b10;
         end else if (draw_player) begin
             r_out = 2'b00;
             g_out = 2'b11;
@@ -157,16 +129,8 @@ module maze_video #(
             r_out = 2'b00;
             g_out = 2'b00;
             b_out = 2'b01;
-            if (highlight_row) begin
-                r_out = phase_r >> 1;
-                g_out = phase_g >> 1;
-                b_out = phase_b >> 1;
-            end
-            if (highlight_cell) begin
-                r_out = phase_r;
-                g_out = phase_g;
-                b_out = phase_b;
-            end
+            if (highlight_row)
+                g_out = 2'b01;
         end
     end
 

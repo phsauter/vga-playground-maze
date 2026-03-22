@@ -68,8 +68,6 @@ module tt_um_phsauter_vga_maze (
     wire solver_won;
     wire gen_busy;
     wire [YW-1:0] gen_row_vis;
-    wire [XW-1:0] gen_col_vis;
-    wire [2:0] gen_phase_vis;
 
     assign uo_out = {hsync, b_out[0], g_out[0], r_out[0], vsync, b_out[1], g_out[1], r_out[1]};
 
@@ -131,9 +129,7 @@ module tt_um_phsauter_vga_maze (
         .player_won(player_won),
         .solver_won(solver_won),
         .gen_busy(gen_busy),
-        .gen_row_vis(gen_row_vis),
-        .gen_col_vis(gen_col_vis),
-        .gen_phase_vis(gen_phase_vis)
+        .gen_row_vis(gen_row_vis)
     );
 
     maze_video #(
@@ -154,8 +150,6 @@ module tt_um_phsauter_vga_maze (
         .solver_won(solver_won),
         .gen_busy(gen_busy),
         .gen_row(gen_row_vis),
-        .gen_col(gen_col_vis),
-        .gen_phase(gen_phase_vis),
         .r_out(r_out),
         .g_out(g_out),
         .b_out(b_out)

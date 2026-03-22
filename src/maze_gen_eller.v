@@ -17,8 +17,6 @@ module maze_gen_eller #(
     output reg              busy,
     output reg              done,
     output reg  [YW-1:0]    vis_row,
-    output reg  [XW-1:0]    vis_col,
-    output reg  [2:0]       vis_phase,
     output reg              clear_all,
     output reg              east_we,
     output reg  [XW-1:0]    east_x,
@@ -43,17 +41,11 @@ module maze_gen_eller #(
     localparam [3:0] G_LAST_ROW_JOIN = 4'd10;
     localparam [3:0] G_DONE = 4'd11;
 
-    localparam [2:0] PH_CLEAR = 3'd0;
-    localparam [2:0] PH_ASSIGN = 3'd1;
-    localparam [2:0] PH_JOIN = 3'd2;
-    localparam [2:0] PH_REMAP = 3'd3;
-    localparam [2:0] PH_DOWN = 3'd4;
-    localparam [2:0] PH_REPAIR = 3'd5;
-    localparam [2:0] PH_LAST_JOIN = 3'd6;
-    localparam [2:0] PH_DONE = 3'd7;
     localparam [XW-1:0] LAST_COL = MAZE_W - 1;
     localparam [XW-1:0] LAST_PAIR_COL = MAZE_W - 2;
     localparam [YW-1:0] LAST_ROW = MAZE_H - 1;
+    localparam [1:0] JOIN_BIAS = 2'd1;
+    localparam [1:0] DROP_BIAS = 2'd2;
 
     reg [3:0] gen_state;
     reg [YW-1:0] row_idx;
@@ -63,8 +55,6 @@ module maze_gen_eller #(
     reg [SET_ID_W-1:0] merge_from;
     reg [SET_ID_W-1:0] merge_to;
     reg [SEED_W-1:0] lfsr;
-    reg [1:0] join_bias;
-    reg [1:0] drop_bias;
 
     reg [SET_ID_W-1:0] row_set [0:MAZE_W-1];
     reg [SET_ID_W-1:0] next_row_set [0:MAZE_W-1];
@@ -104,8 +94,6 @@ module maze_gen_eller #(
             busy <= 1'b0;
             done <= 1'b0;
             vis_row <= {YW{1'b0}};
-            vis_col <= {XW{1'b0}};
-            vis_phase <= PH_CLEAR;
             clear_all <= 1'b0;
             east_we <= 1'b0;
             east_x <= {XW{1'b0}};
@@ -122,8 +110,6 @@ module maze_gen_eller #(
             merge_from <= {SET_ID_W{1'b0}};
             merge_to <= {SET_ID_W{1'b0}};
             lfsr <= {{(SEED_W-8){1'b0}}, 8'hA5};
-            join_bias <= 2'd1;
-            drop_bias <= 2'd2;
             for (i = 0; i < MAZE_W; i = i + 1) begin
                 row_set[i] <= {SET_ID_W{1'b0}};
                 next_row_set[i] <= {SET_ID_W{1'b0}};
@@ -144,8 +130,6 @@ module maze_gen_eller #(
                 gen_state <= G_CLEAR;
                 busy <= 1'b1;
                 vis_row <= {YW{1'b0}};
-                vis_col <= {XW{1'b0}};
-                vis_phase <= PH_CLEAR;
                 row_idx <= {YW{1'b0}};
                 col_idx <= {XW{1'b0}};
                 remap_idx <= {XW{1'b0}};
@@ -153,8 +137,6 @@ module maze_gen_eller #(
                 merge_from <= {SET_ID_W{1'b0}};
                 merge_to <= {SET_ID_W{1'b0}};
                 lfsr <= (seed == {SEED_W{1'b0}}) ? {{(SEED_W-8){1'b0}}, 8'hA5} : seed;
-                join_bias <= seed[1:0];
-                drop_bias <= seed[3:2];
                 for (i = 0; i < MAZE_W; i = i + 1) begin
                     row_set[i] <= {SET_ID_W{1'b0}};
                     next_row_set[i] <= {SET_ID_W{1'b0}};
@@ -171,8 +153,6 @@ module maze_gen_eller #(
                     G_CLEAR: begin
                         clear_all <= 1'b1;
                         vis_row <= {YW{1'b0}};
-                        vis_col <= {XW{1'b0}};
-                        vis_phase <= PH_CLEAR;
                         for (i = 0; i < MAZE_W; i = i + 1) begin
                             row_set[i] <= {SET_ID_W{1'b0}};
                             next_row_set[i] <= {SET_ID_W{1'b0}};
@@ -188,8 +168,6 @@ module maze_gen_eller #(
 
                     G_LOAD_ROW: begin
                         vis_row <= row_idx;
-                        vis_col <= {XW{1'b0}};
-                        vis_phase <= PH_ASSIGN;
                         col_idx <= {XW{1'b0}};
                         for (i = 0; i <= MAZE_W; i = i + 1) begin
                             used_ids[i] <= 1'b0;
@@ -208,8 +186,6 @@ module maze_gen_eller #(
 
                     G_ASSIGN_SETS: begin
                         vis_row <= row_idx;
-                        vis_col <= col_idx;
-                        vis_phase <= PH_ASSIGN;
                         if (row_set[col_idx] == {SET_ID_W{1'b0}}) begin
                             free_id = 0;
                             for (i = 1; i <= MAZE_W; i = i + 1)
@@ -232,9 +208,7 @@ module maze_gen_eller #(
 
                     G_JOIN_SCAN: begin
                         vis_row <= row_idx;
-                        vis_col <= col_idx;
-                        vis_phase <= PH_JOIN;
-                        if (row_set[col_idx] != row_set[col_idx + 1'b1] && decide_path(lfsr[1:0], join_bias)) begin
+                        if (row_set[col_idx] != row_set[col_idx + 1'b1] && decide_path(lfsr[1:0], JOIN_BIAS)) begin
                             east_we <= 1'b1;
                             east_x <= col_idx;
                             east_y <= row_idx;
@@ -254,8 +228,6 @@ module maze_gen_eller #(
 
                     G_MERGE_REMAP: begin
                         vis_row <= row_idx;
-                        vis_col <= remap_idx;
-                        vis_phase <= PH_REMAP;
                         if (row_set[remap_idx] == merge_from)
                             row_set[remap_idx] <= merge_to;
 
@@ -284,8 +256,6 @@ module maze_gen_eller #(
 
                     G_PREP_DOWN: begin
                         vis_row <= row_idx;
-                        vis_col <= {XW{1'b0}};
-                        vis_phase <= PH_DOWN;
                         col_idx <= {XW{1'b0}};
                         for (i = 0; i <= MAZE_W; i = i + 1) begin
                             set_has_down[i] <= 1'b0;
@@ -296,15 +266,13 @@ module maze_gen_eller #(
 
                     G_DOWN_SCAN: begin
                         vis_row <= row_idx;
-                        vis_col <= col_idx;
-                        vis_phase <= PH_DOWN;
 
                         if (~set_seen[row_set[col_idx]]) begin
                             set_seen[row_set[col_idx]] <= 1'b1;
                             set_first_x[row_set[col_idx]] <= col_idx;
                         end
 
-                        if (decide_path(lfsr[3:2], drop_bias)) begin
+                        if (decide_path(lfsr[3:2], DROP_BIAS)) begin
                             south_we <= 1'b1;
                             south_x <= col_idx;
                             south_y <= row_idx;
@@ -325,8 +293,6 @@ module maze_gen_eller #(
 
                     G_REPAIR_SCAN: begin
                         vis_row <= row_idx;
-                        vis_col <= col_idx;
-                        vis_phase <= PH_REPAIR;
                         if (~set_has_down[row_set[col_idx]] && (set_first_x[row_set[col_idx]] == col_idx)) begin
                             south_we <= 1'b1;
                             south_x <= col_idx;
@@ -344,16 +310,12 @@ module maze_gen_eller #(
 
                     G_ADVANCE_ROW: begin
                         vis_row <= row_idx;
-                        vis_col <= {XW{1'b0}};
-                        vis_phase <= PH_REPAIR;
                         row_idx <= row_idx + 1'b1;
                         gen_state <= G_LOAD_ROW;
                     end
 
                     G_LAST_ROW_JOIN: begin
                         vis_row <= row_idx;
-                        vis_col <= col_idx;
-                        vis_phase <= PH_LAST_JOIN;
                         if (row_set[col_idx] != row_set[col_idx + 1'b1]) begin
                             east_we <= 1'b1;
                             east_x <= col_idx;
@@ -373,8 +335,6 @@ module maze_gen_eller #(
 
                     G_DONE: begin
                         vis_row <= row_idx;
-                        vis_col <= {XW{1'b0}};
-                        vis_phase <= PH_DONE;
                         busy <= 1'b0;
                         done <= 1'b1;
                         gen_state <= G_IDLE;

@@ -42,9 +42,7 @@ module maze_game_core #(
     output reg                   player_won,
     output reg                   solver_won,
     output wire                  gen_busy,
-    output wire [YW-1:0]         gen_row_vis,
-    output wire [XW-1:0]         gen_col_vis,
-    output wire [2:0]            gen_phase_vis
+    output wire [YW-1:0]         gen_row_vis
 );
 
     localparam [2:0] C_RESET = 3'd0;
@@ -160,8 +158,6 @@ module maze_game_core #(
         .busy(gen_busy),
         .done(gen_done),
         .vis_row(gen_row_vis),
-        .vis_col(gen_col_vis),
-        .vis_phase(gen_phase_vis),
         .clear_all(clear_all),
         .east_we(east_we),
         .east_x(east_x),
