@@ -16,10 +16,11 @@ module tt_um_phsauter_vga_maze (
     input  wire       rst_n
 );
 
-    localparam integer MAZE_W = 5;
+    localparam integer MAZE_W = 6;
     localparam integer MAZE_H = 6;
     localparam integer CELL_SHIFT = 5;
     localparam integer SEED_W = 16;
+    localparam integer GEN_ALGO_BINARY = 1;
     localparam integer XW = $clog2(MAZE_W);
     localparam integer YW = $clog2(MAZE_H);
     localparam integer EAST_BITS = MAZE_H * (MAZE_W - 1);
@@ -105,7 +106,8 @@ module tt_um_phsauter_vga_maze (
     maze_game_core #(
         .MAZE_W(MAZE_W),
         .MAZE_H(MAZE_H),
-        .SEED_W(SEED_W)
+        .SEED_W(SEED_W),
+        .GEN_ALGO(GEN_ALGO_BINARY)
     ) core (
         .clk(clk),
         .rst_n(rst_n),

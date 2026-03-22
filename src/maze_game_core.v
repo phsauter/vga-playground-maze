@@ -15,6 +15,7 @@ module maze_game_core #(
     parameter integer MAZE_W = 6,
     parameter integer MAZE_H = 6,
     parameter integer SEED_W = 16,
+    parameter integer GEN_ALGO = 1,
     parameter integer XW = $clog2(MAZE_W),
     parameter integer YW = $clog2(MAZE_H),
     parameter integer EAST_BITS = MAZE_H * (MAZE_W - 1),
@@ -53,6 +54,8 @@ module maze_game_core #(
     localparam [XW-1:0] GOAL_X = MAZE_W[XW-1:0] - 1'b1;
     localparam [YW-1:0] GOAL_Y = MAZE_H[YW-1:0] - 1'b1;
     localparam [1:0] SOLVER_DIV = 2'd3;
+    localparam integer GEN_ALGO_ELLER = 0;
+    localparam integer GEN_ALGO_BINARY = 1;
 
     reg [2:0] core_state;
     reg [SEED_W-1:0] lfsr;
@@ -144,30 +147,59 @@ module maze_game_core #(
         .south_walls_flat(south_walls_flat)
     );
 
-    maze_gen_eller #(
-        .MAZE_W(MAZE_W),
-        .MAZE_H(MAZE_H),
-        .SEED_W(SEED_W)
-    ) generator (
-        .clk(clk),
-        .rst_n(rst_n),
-        .start(gen_start),
-        .step_en(frame_tick),
-        .fast_mode(gen_fast_mode),
-        .seed(maze_seed),
-        .busy(gen_busy),
-        .done(gen_done),
-        .vis_row(gen_row_vis),
-        .clear_all(clear_all),
-        .east_we(east_we),
-        .east_x(east_x),
-        .east_y(east_y),
-        .east_val(east_val),
-        .south_we(south_we),
-        .south_x(south_x),
-        .south_y(south_y),
-        .south_val(south_val)
-    );
+    generate
+        if (GEN_ALGO == GEN_ALGO_ELLER) begin : gen_eller
+            maze_gen_eller #(
+                .MAZE_W(MAZE_W),
+                .MAZE_H(MAZE_H),
+                .SEED_W(SEED_W)
+            ) generator (
+                .clk(clk),
+                .rst_n(rst_n),
+                .start(gen_start),
+                .step_en(frame_tick),
+                .fast_mode(gen_fast_mode),
+                .seed(maze_seed),
+                .busy(gen_busy),
+                .done(gen_done),
+                .vis_row(gen_row_vis),
+                .clear_all(clear_all),
+                .east_we(east_we),
+                .east_x(east_x),
+                .east_y(east_y),
+                .east_val(east_val),
+                .south_we(south_we),
+                .south_x(south_x),
+                .south_y(south_y),
+                .south_val(south_val)
+            );
+        end else begin : gen_binary
+            maze_gen_binary_tree #(
+                .MAZE_W(MAZE_W),
+                .MAZE_H(MAZE_H),
+                .SEED_W(SEED_W)
+            ) generator (
+                .clk(clk),
+                .rst_n(rst_n),
+                .start(gen_start),
+                .step_en(frame_tick),
+                .fast_mode(gen_fast_mode),
+                .seed(maze_seed),
+                .busy(gen_busy),
+                .done(gen_done),
+                .vis_row(gen_row_vis),
+                .clear_all(clear_all),
+                .east_we(east_we),
+                .east_x(east_x),
+                .east_y(east_y),
+                .east_val(east_val),
+                .south_we(south_we),
+                .south_x(south_x),
+                .south_y(south_y),
+                .south_val(south_val)
+            );
+        end
+    endgenerate
 
     maze_wall_query #(
         .MAZE_W(MAZE_W),

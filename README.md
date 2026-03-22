@@ -21,7 +21,7 @@ In short: the current code is AI-generated RTL, but it was not produced blindly.
 
 ## What It Does
 
-- generates a perfect maze using a sequential Eller-style maze generator
+- generates a perfect maze using a compact binary-tree maze generator by default
 - stores the maze as compact east-wall and south-wall bitfields
 - renders the maze directly to VGA without a framebuffer
 - shows the maze changing while generation is in progress
@@ -41,8 +41,9 @@ In short: the current code is AI-generated RTL, but it was not produced blindly.
 - `src/tt_um_phsauter_vga_maze.v`: Tiny Tapeout top-level wrapper
 - `src/hvsync_generator.v`: VGA timing generator from the Tiny Tapeout template
 - `src/gamepad_pmod.v`: PMOD gamepad interface modules
-- `src/maze_game_core.v`: gameplay, control FSM, seed handling, solver control
-- `src/maze_gen_eller.v`: sequential Eller maze generator with live progress outputs
+- `src/maze_game_core.v`: gameplay, control FSM, seed handling, solver control, compile-time generator selection
+- `src/maze_gen_binary_tree.v`: compact default maze generator for area-constrained builds
+- `src/maze_gen_eller.v`: larger optional Eller generator kept as an alternate module
 - `src/maze_map.v`: compact maze wall storage
 - `src/maze_wall_query.v`: shared wall lookup logic for movement and rendering
 - `src/maze_solver_hand.v`: reusable wall-follower solver block

@@ -18,7 +18,7 @@
   "GPL_CELL_PADDING": 0,
   "DPL_CELL_PADDING": 0,
 
-  "SYNTH_STRATEGY": "AREA 3",
+  "SYNTH_STRATEGY": "AREA 1",
 
   "//": "CLOCK_PERIOD - Increase this in case you are getting setup time violations.",
   "//": "The value is in nanoseconds, so 20ns == 50MHz.",

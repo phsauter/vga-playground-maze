@@ -9,7 +9,7 @@ You can also include images in this folder and reference them in the markdown. E
 
 ## How it works
 
-The design generates and stores a perfect maze on-chip using a sequential Eller-style generator.
+The design generates and stores a perfect maze on-chip using a compact binary-tree maze generator by default.
 The maze is shown live while it is being built, so walls can visibly change during the reveal.
 After generation finishes, the player controls the green dot while a single wall-following solver can race as well.
 
