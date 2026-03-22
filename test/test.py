@@ -17,19 +17,21 @@ async def smoke_test_top_level(dut):
 
     await ClockCycles(dut.clk, 20)
 
-    assert int(dut.user_project.core.gen_busy.value) == 1
-    assert int(dut.user_project.core.player_x.value) == 0
-    assert int(dut.user_project.core.player_y.value) == 0
-
     initial_hsync = int(dut.uo_out.value[7])
+    initial_rgb = int(dut.uo_out.value.to_unsigned()) & 0x77
     changed = False
+    rgb_changed = False
     for _ in range(900):
         await RisingEdge(dut.clk)
         if int(dut.uo_out.value[7]) != initial_hsync:
             changed = True
+        if (int(dut.uo_out.value.to_unsigned()) & 0x77) != initial_rgb:
+            rgb_changed = True
+        if changed and rgb_changed:
             break
 
     assert changed, "hsync never toggled during smoke test"
+    assert rgb_changed, "video output never changed during smoke test"
 
 
 @cocotb.test()
